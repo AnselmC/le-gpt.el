@@ -118,7 +118,7 @@ Returns list of candidates."
       ('return
        (le-gpt-consult--action cand)))))
 
-;; Public functions
+;;;###autoload
 (defun le-gpt-consult-buffers ()
   "Search through GPT buffer contents using consult."
   (interactive)
