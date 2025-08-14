@@ -39,11 +39,13 @@ If USE-CONTEXT is non-nil, select context files interactively."
     (delete-region start end)
     (set-marker insertion-marker (point))
     (set-process-filter process (lambda (proc string)
-                                  (ignore proc)
-                                  (save-excursion
-                                    (goto-char insertion-marker)
-                                    (insert string)
-                                    (set-marker insertion-marker (point)))))))
+                                  (when (and (not le-gpt--process-interrupted)
+                                             (eq proc le-gpt--current-process)
+                                             (marker-buffer insertion-marker))
+                                    (save-excursion
+                                      (goto-char insertion-marker)
+                                      (insert string)
+                                      (set-marker insertion-marker (point))))))))
 
 (provide 'le-gpt-transform)
 ;;; le-gpt-transform.el ends here

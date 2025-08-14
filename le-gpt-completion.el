@@ -4,7 +4,6 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;;
 
 ;;; Code:
 
@@ -31,11 +30,13 @@ The generated completion is displayed directly in buffer."
          (process (le-gpt--make-process prompt-file nil)))
     (set-marker insertion-marker (point))
     (set-process-filter process (lambda (proc string)
-                                  (ignore proc)
-                                  (save-excursion
-                                    (goto-char insertion-marker)
-                                    (insert string)
-                                    (set-marker insertion-marker (point)))))))
+                                  (when (and (not le-gpt--process-interrupted)
+                                             (eq proc le-gpt--current-process)
+                                             (marker-buffer insertion-marker))
+                                    (save-excursion
+                                      (goto-char insertion-marker)
+                                      (insert string)
+                                      (set-marker insertion-marker (point))))))))
 
 (provide 'le-gpt-completion)
 ;;; le-gpt-completion.el ends here

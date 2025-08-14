@@ -4,7 +4,7 @@
 
 ;; Author: Andreas Stuhlmueller <andreas@ought.org>
 ;; Maintainer: Anselm Coogan <anselm.coogan@gmail.com>
-;; Version: 0.7.0
+;; Version: 0.8.0
 ;; Keywords: openai, anthropic, deepseek, gpt, claude, language, copilot, convenience, tools, llm
 ;; URL: https://github.com/AnselmC/le-gpt.el
 ;; License: MIT
@@ -20,13 +20,12 @@
 ;; - Completion at point
 ;; - Region transformations
 ;; - Context awareness
-
 ;;; Code:
 
 (require 'markdown-mode)
 
 (require 'le-gpt-core)
-(require 'le-gpt-chat)   
+(require 'le-gpt-chat)
 (require 'le-gpt-transform)
 (require 'le-gpt-completion)
 (require 'le-gpt-context)
@@ -54,6 +53,13 @@ With prefix argument USE-CONTEXT,
 interactively select context files to be used for this command."
   (interactive "P")
   (le-gpt-completion-at-point use-context))
+
+;;;###autoload
+(defun le-gpt-interrupt ()
+  "Interrupt the currently running GPT process."
+  (interactive)
+  (le-gpt-interrupt))
+
 
 (defgroup le-gpt nil
   "Customization group for Le GPT."

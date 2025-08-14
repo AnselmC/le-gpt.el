@@ -12,7 +12,7 @@
 (require 'le-gpt-context)
 (require 'markdown-mode)
 
-(defcustom le-gpt-chat-generate-buffer-name-instruction 
+(defcustom le-gpt-chat-generate-buffer-name-instruction
   "Create a title with a maximum of 50 chars for the chat above. Return a single title, nothing else. No quotes."
   "The instruction given to GPT to generate a buffer name."
   :type 'string
@@ -181,6 +181,7 @@ If USE-CONTEXT is non-nil, select context interactively."
     (define-key map (kbd "C-c C-b") 'le-gpt-chat-copy-code-block)
     (define-key map (kbd "C-c C-t") 'le-gpt-chat-generate-buffer-name)
     (define-key map (kbd "C-c C-s") 'le-gpt-chat-save-buffer)
+    (define-key map (kbd "C-c C-k") 'le-gpt-interrupt)
     map)
   "Keymap for `le-gpt-chat-mode'.")
 

@@ -198,7 +198,6 @@ def _print_and_collect_completions(stream, api_type: APIType) -> str:
 
 def _write_to_jsonl(prompt: str, completion: str, path: Path) -> None:
     """Write the prompt and completion to a jsonl file."""
-    # TODO @anselm: consider removing this
     if jsonlines is None:
         return
     path.touch(exist_ok=True)

@@ -11,6 +11,7 @@ The aim is to make sure Emacs stays up-to-date with modern GPT support, essentia
 
 ## Changelog
 
+  - 0.8.0: Add support to interrupt gpt process (`le-gpt-interrupt`)
   - 0.7.0: Update model list to include GPT-5 family & make it configurable.
   - 0.6.0: Add support for filtering buffer list via regex on content. Add optional `le-gpt-consult-buffers` function.
   - 0.5.0: Add buffers as context; remove global context file support.
@@ -69,13 +70,15 @@ Here's how to install it with [straight](https://github.com/radian-software/stra
 ```elisp
 (use-package le-gpt
   :after evil
+  ;; suggested keybindings
   :bind (("M-C-g" . le-gpt-chat)
          ("M-C-n" . le-gpt-complete-at-point)
          ("M-C-t" . le-gpt-transform-region)
+         ("M-C-k" . le-gpt-interrupt)
          ;; if you use consult
          ("C-c C-s" . le-gpt-consult-buffers))
   :config
-  ;; set default values as you wish
+  ;; set default values as you wish (and swith with `le-gpt-switch-model`)
   (setq le-gpt-api-type 'anthropic)
   (setq le-gpt-model "claude-sonnet-4-20250514")
   (setq le-gpt-max-tokens 10000)
@@ -140,6 +143,7 @@ Key bindings in chat buffers include:
   - `C-c C-b`: Copy code block at point
   - `C-c C-t`: Generate descriptive buffer name from its content
   - `C-c C-s`: Save the current buffer
+  - `C-c C-k`: Interrupt the current process
 
 ### Buffer List
 
@@ -188,6 +192,10 @@ As mentioned above, you can set the model + provider like so:
 
 For convenience, you can also cycle through different models via `le-gpt-switch-model`.
 You can update the underyling model list by customizing `le-gpt-model-list`.
+
+### Interrupt process
+For long(er) running responses that are going in the wrong direction, you may want to interrupt them.
+You can do that in a chat using `C-c C-k` and otherwise with `le-gpt-interrupt`.
 
 ## Contributing
 

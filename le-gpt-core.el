@@ -4,7 +4,8 @@
 ;; SPDX-License-Identifier: MIT
 
 ;;; Commentary:
-;;
+;; 
+
 
 ;;; Code:
 
@@ -58,24 +59,55 @@
   :group 'le-gpt)
 
 (defcustom le-gpt-model-list '(("GPT-4.1" . (openai . "gpt-4.1"))
-                   ("GPT-5" . (openai . "gpt-5"))
-                   ("GPT-5 mini" . (openai . "gpt-5-mini"))
-                   ("GPT-5 nano" . (openai . "gpt-5-nano"))
-                   ("Claude 4 Sonnet" . (anthropic . "claude-sonnet-4-20250514"))
-                   ("Claude 4 Opus" . (anthropic . "claude-opus-4-20250514"))
-                   ("Claude 4.1 Opus" . (anthropic . "claude-opus-4-1-20250805"))
-                   ("DeepSeekV3" . (deepseek . "deepseek-chat"))
-                   ("DeepSeekR1" . (deepseek . "deepseek-reasoner")))
+                               ("GPT-5" . (openai . "gpt-5"))
+                               ("GPT-5 mini" . (openai . "gpt-5-mini"))
+                               ("GPT-5 nano" . (openai . "gpt-5-nano"))
+                               ("Claude 4 Sonnet" . (anthropic . "claude-sonnet-4-20250514"))
+                               ("Claude 4 Opus" . (anthropic . "claude-opus-4-20250514"))
+                               ("Claude 4.1 Opus" . (anthropic . "claude-opus-4-1-20250805"))
+                               ("DeepSeekV3" . (deepseek . "deepseek-chat"))
+                               ("DeepSeekR1" . (deepseek . "deepseek-reasoner")))
   "List of available models with their API types and model names."
   :type '(alist :key-type string :value-type (cons symbol string))
   :group 'le-gpt)
 
 
 ;; Core process management functions
+
+(defvar le-gpt--current-process nil
+  "The currently running GPT process.")
+
+(defvar le-gpt--process-interrupted nil
+  "Flag to track if the current process was interrupted.")
+
+(defvar le-gpt--current-timer nil
+  "The currently running timer.")
+
+(defun le-gpt--start-timer (process)
+  "Set timer to run every second and print message if PROCESS is still running."
+  (setq le-gpt--current-timer
+        (run-with-timer 1 1
+                        (lambda ()
+                          (if (process-live-p process)
+                              (progn
+                                (font-lock-update)
+                                (message "Le GPT: Running..."))
+                            (when le-gpt--current-timer
+                              (cancel-timer le-gpt--current-timer)
+                              (setq le-gpt--current-timer nil)))))))
+
+(defun le-gpt--process-filter (process output)
+  "Filter function for GPT process output.
+Only insert output if process hasn't been interrupted."
+  (unless le-gpt--process-interrupted
+    (when (buffer-live-p (process-buffer process))
+      (with-current-buffer (process-buffer process)
+        (goto-char (point-max))
+        (insert output)))))
+
 (defun le-gpt--make-process (prompt-file output-buffer)
-  "Create a GPT process with PROMPT-FILE, and OUTPUT-BUFFER.
-Use `le-gpt-python-path' and `le-gpt--script-path' to execute
-the command with necessary arguments."
+  "Create a GPT process with PROMPT-FILE, and OUTPUT-BUFFER."
+  (setq le-gpt--process-interrupted nil) 
   (let* ((api-key (if (eq le-gpt-api-type 'openai)
                       le-gpt-openai-key
                     (if (eq le-gpt-api-type 'anthropic)
@@ -90,10 +122,15 @@ the command with necessary arguments."
                                   prompt-file api-key le-gpt-model
                                   (number-to-string le-gpt-max-tokens)
                                   (number-to-string le-gpt-temperature) api-type-str)
-                   :connection-type 'pipe))
+                   :connection-type 'pipe
+                   :filter #'le-gpt--process-filter))
          (timer (le-gpt--start-timer process)))
+    (setq le-gpt--current-process process)
     (le-gpt--set-process-sentinel process timer prompt-file)
     process))
+
+
+
 
 (defun le-gpt--start-timer (process)
   "Set timer to run every second and print message if PROCESS is still running."
@@ -105,19 +142,34 @@ the command with necessary arguments."
                   process))
 
 (defun le-gpt--set-process-sentinel (process timer prompt-file)
-  "Set a function to run when the PROCESS finishes or fails.
-TIMER is the timer object that cancels the process after a timeout.
-PROMPT-FILE is the temporary file containing the prompt."
+  "Set a function to run when the PROCESS finishes or fails."
   (set-process-sentinel
    process
    (lambda (proc status)
      (when (memq (process-status proc) '(exit signal))
        (cancel-timer timer)
+       (setq le-gpt--current-process nil)
+       (setq le-gpt--process-interrupted nil)
        (if (zerop (process-exit-status proc))
            (progn
              (delete-file prompt-file)
              (message "Le GPT: Finished successfully."))
          (message "Le GPT: Failed: %s" status))))))
+
+
+(defun le-gpt-interrupt ()
+  "Interrupt the currently running GPT process."
+  (interactive)
+  (if (and le-gpt--current-process
+           (process-live-p le-gpt--current-process))
+      (progn
+        (setq le-gpt--process-interrupted t)
+        (interrupt-process le-gpt--current-process)
+        (when le-gpt--current-timer
+          (cancel-timer le-gpt--current-timer)
+          (setq le-gpt--current-timer nil))
+        (message "Le GPT: Process interrupted"))
+    (message "Le GPT: No running process to interrupt")))
 
 ;; Core utility functions
 (defun le-gpt--create-prompt-file (input)
