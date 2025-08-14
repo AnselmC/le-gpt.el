@@ -57,6 +57,19 @@
   :type 'string
   :group 'le-gpt)
 
+(defcustom le-gpt-model-list '(("GPT-4.1" . (openai . "gpt-4.1"))
+                   ("GPT-5" . (openai . "gpt-5"))
+                   ("GPT-5 mini" . (openai . "gpt-5-mini"))
+                   ("GPT-5 nano" . (openai . "gpt-5-nano"))
+                   ("Claude 4 Sonnet" . (anthropic . "claude-sonnet-4-20250514"))
+                   ("Claude 4 Opus" . (anthropic . "claude-opus-4-20250514"))
+                   ("Claude 4.1 Opus" . (anthropic . "claude-opus-4-1-20250805"))
+                   ("DeepSeekV3" . (deepseek . "deepseek-chat"))
+                   ("DeepSeekR1" . (deepseek . "deepseek-reasoner")))
+  "List of available models with their API types and model names."
+  :type '(alist :key-type string :value-type (cons symbol string))
+  :group 'le-gpt)
+
 
 ;; Core process management functions
 (defun le-gpt--make-process (prompt-file output-buffer)
@@ -129,16 +142,12 @@ INHERIT-INPUT-METHOD have same meaning as in `completing-read'."
            map)))
     (completing-read prompt collection predicate require-match initial-input hist def inherit-input-method)))
 
-;; Model switching functionality
+;;;###autoload
 (defun le-gpt-switch-model ()
   "Switch between OpenAI, Anthropic, and Deepseek models."
   (interactive)
-  (let* ((models '(("GPT-4o" . (openai . "gpt-4o"))
-                   ("DeepSeekV3" . (deepseek . "deepseek-chat"))
-                   ("DeepSeekR1" . (deepseek . "deepseek-reasoner"))
-                   ("Claude 3.7 Sonnet" . (anthropic . "claude-3-7-sonnet-latest"))))
-         (choice (completing-read "Choose model: " (mapcar #'car models) nil t))
-         (model-info (cdr (assoc choice models))))
+  (let* ((choice (completing-read "Choose model: " (mapcar #'car le-gpt-model-list) nil t))
+         (model-info (cdr (assoc choice le-gpt-model-list))))
     (setq le-gpt-api-type (car model-info)
           le-gpt-model (cdr model-info))
     (message "Switched to %s model: %s" (car model-info) (cdr model-info))))

@@ -149,13 +149,16 @@ def _stream_chat_completions(
         messages = _build_messages_for_anthropic(matches)
     try:
         if api_type in (APIType.openai, APIType.deepseek):
+            is_gpt_5 = model.lower().startswith("gpt-5")
+            max_token_kw = "max_completion_tokens" if is_gpt_5 else "max_tokens"
+            extra_kwargs: dict[str, Union[int, float, str]] = {max_token_kw: max_tokens}
+            if not is_gpt_5:
+                extra_kwargs["temperature"] = temperature
+
             return client.chat.completions.create(
-                model=model,
-                messages=messages,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                stream=True,
+                model=model, messages=messages, stream=True, **extra_kwargs
             )
+
         else:
             # for openai the instructions are in the messages
             extra_kwargs = {"system": instructions} if instructions else {}

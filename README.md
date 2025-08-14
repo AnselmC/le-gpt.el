@@ -11,6 +11,7 @@ The aim is to make sure Emacs stays up-to-date with modern GPT support, essentia
 
 ## Changelog
 
+  - 0.7.0: Update model list to include GPT-5 family & make it configurable.
   - 0.6.0: Add support for filtering buffer list via regex on content. Add optional `le-gpt-consult-buffers` function.
   - 0.5.0: Add buffers as context; remove global context file support.
   - 0.4.0: Add DeepSeek support
@@ -176,6 +177,17 @@ Transform selection via:
 ```elisp
 M-x le-gpt-transform-region
 ```
+
+### Switching between models
+As mentioned above, you can set the model + provider like so:
+
+``` elisp
+  (setq le-gpt-api-type 'anthropic)
+  (setq le-gpt-model "claude-sonnet-4-20250514")
+```
+
+For convenience, you can also cycle through different models via `le-gpt-switch-model`.
+You can update the underyling model list by customizing `le-gpt-model-list`.
 
 ## Contributing
 
