@@ -51,6 +51,8 @@
 (defun le-gpt--create-context-completions ()
   "Create completion candidates for context selection with rich metadata."
   (let ((completions '())
+        (project-root (when (project-current)
+                        (project-root (project-current))))
         (project-files (condition-case nil
                            (le-gpt--get-project-files)
                          (error nil)))
@@ -61,45 +63,20 @@
       (let* ((buffer (get-buffer buffer-name))
              (candidate (propertize buffer-name
                                     'context-type 'buffer
-                                    'context-name buffer-name))
-             (size (when buffer (buffer-size buffer)))
-             (modified (when buffer (buffer-modified-p buffer)))
-             (file-path (when buffer (buffer-file-name buffer)))
-             (mode (when buffer
-                     (with-current-buffer buffer
-                       major-mode)))
-             (lines (when buffer
-                      (with-current-buffer buffer
-                        (count-lines (point-min) (point-max)))))
-             (last-used (le-gpt--get-buffer-last-used buffer-name)))
+                                    'context-name buffer-name)))
         (push (cons candidate `((type . buffer)
                                 (name . ,buffer-name)
-                                (size . ,size)
-                                (modified . ,modified)
-                                (file-path . ,file-path)
-                                (mode . ,mode)
-                                (lines . ,lines)
-                                (last-used . ,last-used)))
+                                (buffer . ,buffer)))  ; Store minimal info, compute rest lazily
               completions)))
 
-    ;; Add project files with rich metadata (added second, will be middle)
+    ;; Add project files with MINIMAL metadata
     (dolist (file project-files)
-      (let* ((full-path (expand-file-name file (project-root (project-current))))
-             (candidate (propertize file
-                                    'context-type 'file
-                                    'context-path file))
-             (size (le-gpt--get-file-size full-path))
-             (modified (le-gpt--get-file-modified-time full-path))
-             (extension (file-name-extension file))
-             (lines (le-gpt--count-file-lines full-path)))
+      (let ((candidate (propertize file
+                                   'context-type 'file
+                                   'context-path file)))
         (push (cons candidate `((type . file)
                                 (path . ,file)
-                                (full-path . ,full-path)
-                                (name . ,file)
-                                (size . ,size)
-                                (modified . ,modified)
-                                (extension . ,extension)
-                                (lines . ,lines)))
+                                (project-root . ,project-root)))  
               completions)))
 
     ;; Add history entries LAST (will end up first due to append)
@@ -108,41 +85,49 @@
     completions))
 
 (defun le-gpt--get-context-annotations (completions)
-  "Get annotation function with dynamic padding for perfect alignment."
+  "Get annotation function with dynamic padding for perfect alignment.
+Computes expensive metadata lazily only when annotation is displayed."
   (let ((max-name-length (apply #'max
                                 (mapcar (lambda (comp) (length (car comp)))
                                         completions))))
     (lambda (candidate)
       (let* ((metadata (assoc-default candidate completions))
              (type (assoc-default 'type metadata))
-             (name (assoc-default 'name metadata))
              (current-length (length candidate))
-             ;; Ensure minimum 4 spaces, but align all entries
              (padding (max 4 (- (+ max-name-length 4) current-length))))
         (cond
          ((eq type 'history)
-          (let* ((timestamp (assoc-default 'timestamp metadata))
-                 (summary (assoc-default 'summary metadata)))
+          (let* ((timestamp (assoc-default 'timestamp metadata)))
             (format "%s%-8s %s"
                     (make-string padding ?\s)
                     "[History]"
                     (le-gpt--format-time-ago timestamp))))
+
          ((eq type 'file)
+          ;; Compute file info lazily only when displaying annotation
           (let* ((path (assoc-default 'path metadata))
-                 (size (assoc-default 'size metadata))
-                 (ext (file-name-extension path))
-                 (modified (assoc-default 'modified metadata)))
+                 (project-root (assoc-default 'project-root metadata))
+                 (full-path (expand-file-name path project-root))
+                 (file-info (le-gpt--get-file-info-cached full-path))
+                 (size (car file-info))
+                 (modified (cdr file-info))
+                 (ext (file-name-extension path)))
             (format "%s%-8s %-8s %-8s %s"
                     (make-string padding ?\s)
                     "[File]"
                     (le-gpt--format-file-size size)
                     (if ext (format "(%s)" ext) "")
                     (le-gpt--format-time-ago modified))))
+
          ((eq type 'buffer)
-          (let* ((size (assoc-default 'size metadata))
-                 (modified (assoc-default 'modified metadata))
-                 (mode (assoc-default 'mode metadata))
-                 (file-path (assoc-default 'file-path metadata)))
+          ;; Compute buffer info lazily
+          (let* ((buffer (assoc-default 'buffer metadata))
+                 (size (when buffer (buffer-size buffer)))
+                 (modified (when buffer (buffer-modified-p buffer)))
+                 (mode (when buffer
+                         (with-current-buffer buffer
+                           major-mode)))
+                 (file-path (when buffer (buffer-file-name buffer))))
             (format "%s%-8s %-8s %-12s%s%s"
                     (make-string padding ?\s)
                     "[Buffer]"
@@ -205,6 +190,7 @@
                              "No items selected yet\n\n")))
 
         (setq selection
+
               (completing-read
                (format "%sSelect context item (empty input when done) [%d selected]: "
                        selected-help
