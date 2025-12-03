@@ -155,7 +155,6 @@ You can add context for all of the below functionality by calling the functions 
 You'll then be prompted to add project files and buffers as context.
 For convenience, you also have the option to use a previous context selection.
 
-**Performance Note**: Context loading is now optimized for large projects with intelligent caching, progress indicators, and configurable size limits. Very large files will show a preview instead of full content to keep response times fast.
 
 ### Chat Interface
 
