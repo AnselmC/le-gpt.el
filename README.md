@@ -146,7 +146,6 @@ Basic configuration:
 - `le-gpt-max-total-context-size`: Maximum total size of all context files combined (default: 10MB)  
 - `le-gpt-file-preview-lines`: For large files, show only the first N lines (0 = show all, default: 1000)
 
-These settings help prevent memory issues and long loading times when working with large codebases. The system also includes intelligent caching to avoid re-processing unchanged files.
 
 ## Usage
 
