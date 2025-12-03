@@ -11,6 +11,11 @@ The aim is to make sure Emacs stays up-to-date with modern GPT support, essentia
 
 ## Changelog
 
+  - 0.10.0: Update model list (latest claude & gpt)
+  - 0.9.0: 
+    - Performance improvements for selecting context in large projects
+    - Fix context history being in reversed order
+    - Deduplicate context history
   - 0.8.0: Add support to interrupt gpt process (`le-gpt-interrupt`)
   - 0.7.0: Update model list to include GPT-5 family & make it configurable.
   - 0.6.0: Add support for filtering buffer list via regex on content. Add optional `le-gpt-consult-buffers` function.
@@ -29,7 +34,7 @@ See [usage](#buffer-list) for more details.
 
 - **Region Transformation**: Select a region you want GPT to transform. Use `M-x le-gpt-transform-region` to transform the selected region using GPT. See [usage](#region-transformation) for more details.
 
-- **Context**: Select files from your project and buffers that GPT should use as context. 
+- **Context with Caching**: Select files from your project and buffers that GPT should use as context. 
 You can select per-command context by running the above commands with a prefix argument (`C-u`). Context is used by chat, completion, and region transforms. See [usage](#context) for more details.
 
 ### Mandatory GIFs
@@ -80,8 +85,15 @@ Here's how to install it with [straight](https://github.com/radian-software/stra
   :config
   ;; set default values as you wish (and swith with `le-gpt-switch-model`)
   (setq le-gpt-api-type 'anthropic)
-  (setq le-gpt-model "claude-sonnet-4-20250514")
+  (setq le-gpt-model "claude-sonnet-4-5")
   (setq le-gpt-max-tokens 10000)
+  
+  
+  ;; Performance settings for large projects (optional)
+  (setq le-gpt-max-file-size (* 500 1024))           ; 500KB max per file
+  (setq le-gpt-max-total-context-size (* 5 1024 1024)) ; 5MB total context limit
+  (setq le-gpt-file-preview-lines 1000)              ; Show first 1000 lines of large files
+
   
   (setq le-gpt-openai-key "xxx")
   (setq le-gpt-anthropic-key "xxx")
@@ -118,10 +130,22 @@ Basic configuration:
 
 ;; Model Parameters (optional)
 (setq le-gpt-api-type 'anthropic)
-(setq le-gpt-model "claude-sonnet-4-20250514") ;; make sure this matches le-gpt-api-type
+(setq le-gpt-model "claude-sonnet-4-5") ;; make sure this matches le-gpt-api-type
 (setq le-gpt-max-tokens 10000)
 (setq le-gpt-temperature 0)
+
+;; Performance settings for large projects (optional)
+(setq le-gpt-max-file-size (* 500 1024))           ; 500KB max per file
+(setq le-gpt-max-total-context-size (* 5 1024 1024)) ; 5MB total context limit
+(setq le-gpt-file-preview-lines 50)                ; Show first 50 lines of files
 ```
+
+### Performance Settings
+
+- `le-gpt-max-file-size`: Maximum size of individual files to include in context (default: 1MB)
+- `le-gpt-max-total-context-size`: Maximum total size of all context files combined (default: 10MB)  
+- `le-gpt-file-preview-lines`: For large files, show only the first N lines (0 = show all, default: 1000)
+
 
 ## Usage
 
@@ -129,6 +153,7 @@ Basic configuration:
 You can add context for all of the below functionality by calling the functions with a prefix argument (`C-u`).
 You'll then be prompted to add project files and buffers as context.
 For convenience, you also have the option to use a previous context selection.
+
 
 ### Chat Interface
 
@@ -187,7 +212,7 @@ As mentioned above, you can set the model + provider like so:
 
 ``` elisp
   (setq le-gpt-api-type 'anthropic)
-  (setq le-gpt-model "claude-sonnet-4-20250514")
+  (setq le-gpt-model "claude-sonnet-4-5")
 ```
 
 For convenience, you can also cycle through different models via `le-gpt-switch-model`.
@@ -201,7 +226,15 @@ You can do that in a chat using `C-c C-k` and otherwise with `le-gpt-interrupt`.
 
 Contributions are welcome! Please feel free to submit issues and pull requests on GitHub.
 
+Some things I'm planning to work on:
+
+- [] Ability to easily add/remove system prompt snippets (e.g., "Don't be a sycophant", "Be brief")
+- [] Gemini support
+- [] Adding snippets to context (instead of entire files or copy pasting in prompt)
+- [] MPC support
+
 ## License
 
 le-gpt.el is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
 

@@ -13,8 +13,29 @@
 (defvar le-gpt--context-history nil
   "List of previously used context selections.")
 
+(defun le-gpt--normalize-context-items (items)
+  "Normalize ITEMS for comparison by sorting them and removing text properties."
+  (sort (mapcar (lambda (item)
+                  (substring-no-properties item))
+                items)
+        #'string<))
+
+(defun le-gpt--context-items-equal-p (items1 items2)
+  "Return t if ITEMS1 and ITEMS2 represent the same context (ignoring order)."
+  (equal (le-gpt--normalize-context-items items1)
+         (le-gpt--normalize-context-items items2)))
+
 (defun le-gpt--save-context-to-history (selected-items)
   "Save SELECTED-ITEMS to context history."
+  ;; Remove any existing entry with the same items (ignoring order)
+  (setq le-gpt--context-history
+        (seq-remove (lambda (entry)
+                      (le-gpt--context-items-equal-p
+                       (plist-get entry :items)
+                       selected-items))
+                    le-gpt--context-history))
+  
+  ;; Add new entry at the beginning
   (let ((context-entry (list :timestamp (current-time)
                              :items selected-items)))
     (push context-entry le-gpt--context-history)
@@ -25,6 +46,7 @@
 (defun le-gpt--create-history-completions ()
   "Create completion candidates from context history."
   (let ((completions '()))
+    ;; Process history in forward order (most recent first)
     (cl-loop for i from 0
              for entry in le-gpt--context-history
              do (let* ((timestamp (plist-get entry :timestamp))
@@ -39,7 +61,8 @@
                                           (items . ,items)
                                           (summary . ,summary)))
                         completions)))
-    completions))
+    ;; Reverse to show most recent first in completion list
+    (nreverse completions)))
 
 (defun le-gpt--format-context-summary (items)
   "Create a brief summary of context ITEMS."

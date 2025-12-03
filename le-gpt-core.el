@@ -16,9 +16,16 @@
   (expand-file-name "le-gpt.py" (file-name-directory (or load-file-name buffer-file-name)))
   "The path to the Python script used by gpt.el.")
 
-(defcustom le-gpt-model "gpt-4o"
-  "The model to use (e.g., `gpt-4', `claude-3-7-sonnet-20240620', `deepseek-chat')."
+(defcustom le-gpt-model "claude-sonnet-4-5"
+  "The model to use."
   :type 'string
+  :group 'le-gpt)
+
+(defcustom le-gpt-api-type 'anthropic
+  "The type of API to use.  \='openai, \='anthropic, or \='deepseek."
+  :type '(choice (const :tag "OpenAI" openai)
+                 (const :tag "Deepseek" deepseek)
+                 (const :tag "Anthropic" anthropic))
   :group 'le-gpt)
 
 (defcustom le-gpt-max-tokens 2000
@@ -46,25 +53,18 @@
   :type 'string
   :group 'le-gpt)
 
-(defcustom le-gpt-api-type 'anthropic
-  "The type of API to use.  \='openai, \='anthropic, or \='deepseek."
-  :type '(choice (const :tag "OpenAI" openai)
-                 (const :tag "Deepseek" deepseek)
-                 (const :tag "Anthropic" anthropic))
-  :group 'le-gpt)
 
 (defcustom le-gpt-python-path "python"
   "The path to your python executable."
   :type 'string
   :group 'le-gpt)
 
-(defcustom le-gpt-model-list '(("GPT-4.1" . (openai . "gpt-4.1"))
-                               ("GPT-5" . (openai . "gpt-5"))
+(defcustom le-gpt-model-list '(("GPT-5.1" . (openai . "gpt-5.1"))
                                ("GPT-5 mini" . (openai . "gpt-5-mini"))
                                ("GPT-5 nano" . (openai . "gpt-5-nano"))
-                               ("Claude 4 Sonnet" . (anthropic . "claude-sonnet-4-20250514"))
-                               ("Claude 4 Opus" . (anthropic . "claude-opus-4-20250514"))
-                               ("Claude 4.1 Opus" . (anthropic . "claude-opus-4-1-20250805"))
+                               ("Claude 4.5 Haiku" . (anthropic . "claude-haiku-4-5"))
+                               ("Claude 4.5 Sonnet" . (anthropic . "claude-sonnet-4-5"))
+                               ("Claude 4.5 Opus" . (anthropic . "claude-opus-4-5"))
                                ("DeepSeekV3" . (deepseek . "deepseek-chat"))
                                ("DeepSeekR1" . (deepseek . "deepseek-reasoner")))
   "List of available models with their API types and model names."
