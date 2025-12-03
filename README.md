@@ -11,6 +11,7 @@ The aim is to make sure Emacs stays up-to-date with modern GPT support, essentia
 
 ## Changelog
 
+  - 0.10.0: Update model list (latest claude & gpt)
   - 0.9.0: 
     - Performance improvements for selecting context in large projects
     - Fix context history being in reversed order
@@ -84,7 +85,7 @@ Here's how to install it with [straight](https://github.com/radian-software/stra
   :config
   ;; set default values as you wish (and swith with `le-gpt-switch-model`)
   (setq le-gpt-api-type 'anthropic)
-  (setq le-gpt-model "claude-sonnet-4-20250514")
+  (setq le-gpt-model "claude-sonnet-4-5")
   (setq le-gpt-max-tokens 10000)
   
   
@@ -129,7 +130,7 @@ Basic configuration:
 
 ;; Model Parameters (optional)
 (setq le-gpt-api-type 'anthropic)
-(setq le-gpt-model "claude-sonnet-4-20250514") ;; make sure this matches le-gpt-api-type
+(setq le-gpt-model "claude-sonnet-4-5") ;; make sure this matches le-gpt-api-type
 (setq le-gpt-max-tokens 10000)
 (setq le-gpt-temperature 0)
 
@@ -213,7 +214,7 @@ As mentioned above, you can set the model + provider like so:
 
 ``` elisp
   (setq le-gpt-api-type 'anthropic)
-  (setq le-gpt-model "claude-sonnet-4-20250514")
+  (setq le-gpt-model "claude-sonnet-4-5")
 ```
 
 For convenience, you can also cycle through different models via `le-gpt-switch-model`.
@@ -226,6 +227,13 @@ You can do that in a chat using `C-c C-k` and otherwise with `le-gpt-interrupt`.
 ## Contributing
 
 Contributions are welcome! Please feel free to submit issues and pull requests on GitHub.
+
+Some things I'm planning to work on:
+
+- [] Ability to easily add/remove system prompt snippets (e.g., "Don't be a sycophant", "Be brief")
+- [] Gemini support
+- [] Adding snippets to context (instead of entire files or copy pasting in prompt)
+- [] MPC support
 
 ## License
 
