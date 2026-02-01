@@ -11,6 +11,7 @@ The aim is to make sure Emacs stays up-to-date with modern GPT support, essentia
 
 ## Changelog
 
+  - 0.11.0: Add system prompt snippets for reusable instructions
   - 0.10.0: Update model list (latest claude & gpt)
   - 0.9.0: 
     - Performance improvements for selecting context in large projects
@@ -34,8 +35,10 @@ See [usage](#buffer-list) for more details.
 
 - **Region Transformation**: Select a region you want GPT to transform. Use `M-x le-gpt-transform-region` to transform the selected region using GPT. See [usage](#region-transformation) for more details.
 
-- **Context with Caching**: Select files from your project and buffers that GPT should use as context. 
+- **Context with Caching**: Select files from your project and buffers that GPT should use as context.
 You can select per-command context by running the above commands with a prefix argument (`C-u`). Context is used by chat, completion, and region transforms. See [usage](#context) for more details.
+
+- **System Prompt Snippets**: Create reusable system prompt snippets (e.g., "Be concise", "You are a code reviewer") that can be toggled on/off and automatically combined when making GPT requests. See [usage](#system-prompt-snippets) for more details.
 
 ### Mandatory GIFs
 
@@ -112,10 +115,19 @@ If you're using `evil`, you'll want to add
       (kbd "gr") #'le-gpt-buffer-list-refresh
       (kbd "/") #'le-gpt-buffer-list-filter
       (kbd "C-c C-s") #'le-gpt-consult-buffers
+      (kbd "q") #'quit-window)
+    (evil-define-key 'normal le-gpt-snippets-list-mode-map
+      (kbd "RET") #'le-gpt-snippets-list--edit
+      (kbd "a") #'le-gpt-snippets-list--add
+      (kbd "d") #'le-gpt-snippets-list--delete
+      (kbd "t") #'le-gpt-snippets-list--toggle
+      (kbd "+") #'le-gpt-snippets-list--decrease-order
+      (kbd "-") #'le-gpt-snippets-list--increase-order
+      (kbd "gr") #'le-gpt-snippets--refresh
       (kbd "q") #'quit-window))
 ```
 
-to get the above mentioned buffer list comands to work.
+to get the above mentioned buffer list and snippet list commands to work.
 
 ## Configuration
 
@@ -222,16 +234,56 @@ You can update the underyling model list by customizing `le-gpt-model-list`.
 For long(er) running responses that are going in the wrong direction, you may want to interrupt them.
 You can do that in a chat using `C-c C-k` and otherwise with `le-gpt-interrupt`.
 
+### System Prompt Snippets
+
+System prompt snippets allow you to create reusable instructions that are automatically included in requests to GPT. This is useful for persistent preferences like "Be concise", "Don't add unnecessary comments", or role-based instructions like "You are an expert code reviewer".
+
+#### Managing Snippets
+
+Open the snippet management interface:
+```elisp
+M-x le-gpt-snippet-list
+```
+
+Key bindings in the snippet list:
+- `a`: Add a new snippet
+- `RET`: Edit snippet content
+- `t`: Toggle snippet enabled/disabled
+- `d`: Delete snippet
+- `+`/`-`: Adjust priority (lower order = higher priority)
+- `g`: Refresh list
+
+You can also manage snippets directly:
+- `M-x le-gpt-snippet-add`: Add a new snippet
+- `M-x le-gpt-snippet-edit`: Edit an existing snippet
+- `M-x le-gpt-snippet-toggle`: Toggle a snippet on/off
+- `M-x le-gpt-snippet-remove`: Remove a snippet
+
+#### How Snippets Work
+
+- Enabled snippets are automatically prepended to the system prompt for all GPT requests (chat, completion, transform)
+- Multiple enabled snippets are concatenated in order (by the `:order` field)
+- Snippets are persisted to `~/.emacs.d/le-gpt-snippets.el` (configurable via `le-gpt-snippets-file`)
+- Changes are saved automatically
+
+#### Example Snippets
+
+Here are some useful snippet ideas:
+- "Be concise and direct. Avoid unnecessary explanations."
+- "When writing code, don't add comments unless the logic is non-obvious."
+- "You are an expert Emacs Lisp developer."
+- "Always consider edge cases and error handling."
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit issues and pull requests on GitHub.
 
 Some things I'm planning to work on:
 
-- [] Ability to easily add/remove system prompt snippets (e.g., "Don't be a sycophant", "Be brief")
-- [] Gemini support
-- [] Adding snippets to context (instead of entire files or copy pasting in prompt)
-- [] MPC support
+- [x] Ability to easily add/remove system prompt snippets (e.g., "Don't be a sycophant", "Be brief")
+- [ ] Gemini support
+- [ ] Adding snippets to context (instead of entire files or copy pasting in prompt)
+- [ ] MCP support
 
 ## License
 

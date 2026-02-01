@@ -85,16 +85,12 @@
 
 (defun le-gpt--start-timer (process)
   "Set timer to run every second and print message if PROCESS is still running."
-  (setq le-gpt--current-timer
-        (run-with-timer 1 1
-                        (lambda ()
-                          (if (process-live-p process)
-                              (progn
-                                (font-lock-update)
-                                (message "Le GPT: Running..."))
-                            (when le-gpt--current-timer
-                              (cancel-timer le-gpt--current-timer)
-                              (setq le-gpt--current-timer nil)))))))
+  (run-with-timer 1 1
+                  (lambda (timer-object)
+                    (when (process-live-p timer-object)
+                      (font-lock-update)
+                      (message "Le GPT: Running...")))
+                  process))
 
 (defun le-gpt--process-filter (process output)
   "Filter function for GPT process output.
@@ -105,44 +101,44 @@ Only insert output if process hasn't been interrupted."
         (goto-char (point-max))
         (insert output)))))
 
-(defun le-gpt--make-process (prompt-file output-buffer)
-  "Create a GPT process with PROMPT-FILE, and OUTPUT-BUFFER."
-  (setq le-gpt--process-interrupted nil) 
+(defun le-gpt--create-system-file (instructions)
+  "Write INSTRUCTIONS to a temp file and return the path."
+  (let ((temp-file (make-temp-file "le-gpt-system")))
+    (with-temp-file temp-file
+      (insert instructions))
+    temp-file))
+
+(defun le-gpt--make-process (prompt-file output-buffer &optional system-instructions)
+  "Create a GPT process with PROMPT-FILE, OUTPUT-BUFFER, and optional SYSTEM-INSTRUCTIONS."
+  (setq le-gpt--process-interrupted nil)
   (let* ((api-key (if (eq le-gpt-api-type 'openai)
                       le-gpt-openai-key
                     (if (eq le-gpt-api-type 'anthropic)
                         le-gpt-anthropic-key
                       le-gpt-deepseek-key)))
          (api-type-str (symbol-name le-gpt-api-type))
+         (system-file (when system-instructions
+                        (le-gpt--create-system-file system-instructions)))
+         (command (append (list le-gpt-python-path
+                                le-gpt--script-path
+                                prompt-file api-key le-gpt-model
+                                (number-to-string le-gpt-max-tokens)
+                                (number-to-string le-gpt-temperature) api-type-str)
+                          (when system-file (list "--system" system-file))))
          (process (make-process
                    :name "le-gpt-process"
                    :buffer output-buffer
-                   :command (list le-gpt-python-path
-                                  le-gpt--script-path
-                                  prompt-file api-key le-gpt-model
-                                  (number-to-string le-gpt-max-tokens)
-                                  (number-to-string le-gpt-temperature) api-type-str)
+                   :command command
                    :connection-type 'pipe
                    :filter #'le-gpt--process-filter))
          (timer (le-gpt--start-timer process)))
     (setq le-gpt--current-process process)
-    (le-gpt--set-process-sentinel process timer prompt-file)
+    (le-gpt--set-process-sentinel process timer prompt-file system-file)
     process))
 
-
-
-
-(defun le-gpt--start-timer (process)
-  "Set timer to run every second and print message if PROCESS is still running."
-  (run-with-timer 1 1
-                  (lambda (timer-object)
-                    (when (process-live-p timer-object)
-                      (font-lock-update)
-                      (message "Le GPT: Running...")))
-                  process))
-
-(defun le-gpt--set-process-sentinel (process timer prompt-file)
-  "Set a function to run when the PROCESS finishes or fails."
+(defun le-gpt--set-process-sentinel (process timer prompt-file &optional system-file)
+  "Set a function to run when the PROCESS finishes or fails.
+Cleans up PROMPT-FILE and optional SYSTEM-FILE on success."
   (set-process-sentinel
    process
    (lambda (proc status)
@@ -153,6 +149,7 @@ Only insert output if process hasn't been interrupted."
        (if (zerop (process-exit-status proc))
            (progn
              (delete-file prompt-file)
+             (when system-file (delete-file system-file))
              (message "Le GPT: Finished successfully."))
          (message "Le GPT: Failed: %s" status))))))
 
@@ -238,6 +235,17 @@ INHERIT-INPUT-METHOD have same meaning as in `completing-read'."
   (with-temp-file file
     (dolist (cmd le-gpt--command-history)
       (insert (format "%s\n" cmd)))))
+
+;; System instructions
+(declare-function le-gpt-snippets--get-combined "le-gpt-snippets")
+
+(defun le-gpt--build-system-instructions (task-instructions)
+  "Combine enabled snippets with TASK-INSTRUCTIONS."
+  (let ((snippets (and (featurep 'le-gpt-snippets)
+                       (le-gpt-snippets--get-combined))))
+    (if (and snippets task-instructions)
+        (concat snippets "\n\n" task-instructions)
+      (or snippets task-instructions))))
 
 (provide 'le-gpt-core)
 
