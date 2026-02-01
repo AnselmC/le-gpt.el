@@ -117,8 +117,9 @@
 ;; Interactive commands
 (defun le-gpt-chat-start (use-context)
   "Start chat with GPT in new buffer.
-If USE-CONTEXT is non-nil, select context interactively."
-  (let* ((context (if use-context (le-gpt--get-context) nil))
+If USE-CONTEXT is non-nil, select context interactively.
+Pending context is always included if present."
+  (let* ((context (le-gpt--get-all-context use-context))
          (command (le-gpt--read-command))
          (output-buffer (le-gpt--chat-create-output-buffer command))
          (input (when (use-region-p)

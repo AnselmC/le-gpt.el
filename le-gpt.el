@@ -4,7 +4,7 @@
 
 ;; Author: Andreas Stuhlmueller <andreas@ought.org>
 ;; Maintainer: Anselm Coogan <anselm.coogan@gmail.com>
-;; Version: 0.11.0
+;; Version: 0.12.0
 ;; Keywords: openai, anthropic, deepseek, gpt, claude, language, copilot, convenience, tools, llm
 ;; URL: https://github.com/AnselmC/le-gpt.el
 ;; License: MIT
@@ -19,7 +19,7 @@
 ;; - Multiple chats with different models
 ;; - Completion at point
 ;; - Region transformations
-;; - Context awareness
+;; - Context awareness (files, buffers, and ad-hoc snippets)
 ;; - System prompt snippets
 ;;; Code:
 

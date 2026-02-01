@@ -11,6 +11,7 @@ The aim is to make sure Emacs stays up-to-date with modern GPT support, essentia
 
 ## Changelog
 
+  - 0.12.0: Add pending context queue for ad-hoc snippets
   - 0.11.0: Add system prompt snippets for reusable instructions
   - 0.10.0: Update model list (latest claude & gpt)
   - 0.9.0: 
@@ -37,6 +38,8 @@ See [usage](#buffer-list) for more details.
 
 - **Context with Caching**: Select files from your project and buffers that GPT should use as context.
 You can select per-command context by running the above commands with a prefix argument (`C-u`). Context is used by chat, completion, and region transforms. See [usage](#context) for more details.
+
+- **Pending Context Queue**: Quickly grab text snippets from any buffer (logs, errors, code fragments) and queue them for the next GPT request. No need to copy-paste into your prompt. See [usage](#pending-context) for more details.
 
 - **System Prompt Snippets**: Create reusable system prompt snippets (e.g., "Be concise", "You are a code reviewer") that can be toggled on/off and automatically combined when making GPT requests. See [usage](#system-prompt-snippets) for more details.
 
@@ -83,6 +86,7 @@ Here's how to install it with [straight](https://github.com/radian-software/stra
          ("M-C-n" . le-gpt-complete-at-point)
          ("M-C-t" . le-gpt-transform-region)
          ("M-C-k" . le-gpt-interrupt)
+         ("M-C-c" . le-gpt-context-add-region)
          ;; if you use consult
          ("C-c C-s" . le-gpt-consult-buffers))
   :config
@@ -166,6 +170,23 @@ You can add context for all of the below functionality by calling the functions 
 You'll then be prompted to add project files and buffers as context.
 For convenience, you also have the option to use a previous context selection.
 
+### Pending Context
+
+Pending context lets you quickly grab snippets from any buffer and queue them for the next GPT request. This is useful for including error logs, test output, or code fragments without copy-pasting.
+
+#### Workflow
+1. Select text in any buffer (e.g., error logs in a shell buffer)
+2. Run `M-x le-gpt-context-add-region` (suggested binding: `M-C-c`)
+3. Repeat for additional snippets if needed
+4. Run your GPT command (`le-gpt-chat`, `le-gpt-complete-at-point`, etc.)
+5. Pending context is automatically included and then cleared
+
+#### Commands
+- `M-x le-gpt-context-add-region`: Add selected region to pending context
+- `M-x le-gpt-context-clear`: Clear all pending context
+- `M-x le-gpt-context-show`: Show current pending context in a buffer
+
+Pending context is session-only (not persisted) and is automatically cleared after being used in a GPT request.
 
 ### Chat Interface
 
@@ -281,8 +302,8 @@ Contributions are welcome! Please feel free to submit issues and pull requests o
 Some things I'm planning to work on:
 
 - [x] Ability to easily add/remove system prompt snippets (e.g., "Don't be a sycophant", "Be brief")
+- [x] Adding snippets to context (instead of entire files or copy pasting in prompt)
 - [ ] Gemini support
-- [ ] Adding snippets to context (instead of entire files or copy pasting in prompt)
 - [ ] MCP support
 
 ## License
