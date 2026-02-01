@@ -11,6 +11,7 @@ The aim is to make sure Emacs stays up-to-date with modern GPT support, essentia
 
 ## Changelog
 
+  - 0.12.1: Fix `le-gpt-interrupt` infinite recursion bug
   - 0.12.0: Add pending context queue for ad-hoc snippets
   - 0.11.0: Add system prompt snippets for reusable instructions
   - 0.10.0: Update model list (latest claude & gpt)
