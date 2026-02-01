@@ -154,6 +154,7 @@ Cleans up PROMPT-FILE and optional SYSTEM-FILE on success."
          (message "Le GPT: Failed: %s" status))))))
 
 
+;;;###autoload
 (defun le-gpt-interrupt ()
   "Interrupt the currently running GPT process."
   (interactive)
