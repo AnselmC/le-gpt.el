@@ -106,13 +106,8 @@ First %s is replaced with the list of files, second with their contents.")
     (if (and le-gpt--project-files-cache
              (equal project-root le-gpt--cache-project-root))
         (progn
-          (when le-gpt-debug-timing
-            (message "[le-gpt timing] Using cached project files (%d files)"
-                     (length le-gpt--project-files-cache)))
           le-gpt--project-files-cache)
       ;; Rebuild cache
-      (when le-gpt-debug-timing
-        (message "[le-gpt timing] Building project files cache..."))
       (condition-case err
           (let* ((all-files
                   (project-files current-project))
@@ -120,15 +115,12 @@ First %s is replaced with the list of files, second with their contents.")
                   (mapcar (lambda (f)
                             (file-relative-name f project-root))
                           all-files)))
-            (when le-gpt-debug-timing
-              (message "[le-gpt timing] Found %d total files, filtering..."
-                       (length all-files)))
+            
             (let ((files
                    (seq-filter #'le-gpt--is-text-file-p relative-files)))
               (setq le-gpt--project-files-cache files
                     le-gpt--cache-project-root project-root)
-              (when le-gpt-debug-timing
-                (message "[le-gpt timing] Cached %d text files" (length files)))
+              
               files))
         (error
          ;; Clear cache on error
@@ -161,8 +153,7 @@ First %s is replaced with the list of files, second with their contents.")
             ;; For known text extensions, skip content check
             (or (member ext le-gpt--text-extensions)
                 ;; For unknown extensions, do content check
-                (and (string-empty-p ext)
-                     (le-gpt--file-appears-textual-p full-path))))))))
+                (le-gpt--file-appears-textual-p full-path)))))))
 
 (defun le-gpt--file-appears-textual-p (file-path)
   "Check if FILE-PATH appears to contain text (optimized version)."
@@ -194,8 +185,7 @@ First %s is replaced with the list of files, second with their contents.")
 
     (dolist (file selected-context-files)
       (setq processed (1+ processed))
-      (when (and (zerop (% processed 10))
-                 (not le-gpt-debug-timing))
+      (when (zerop (% processed 10))
         (message "Processing file %d/%d..." processed total-files))
 
       (condition-case err
