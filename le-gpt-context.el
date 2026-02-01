@@ -8,6 +8,101 @@
 
 ;;; Code:
 
+;;; Pending Context Queue
+;; Allows users to accumulate context snippets that are automatically
+;; included in the next GPT request.
+
+(defvar le-gpt--pending-context nil
+  "List of pending context items to include in next GPT request.
+Each item is a plist with :content, :source, :lines, :timestamp.")
+
+(defun le-gpt--pending-context-format-item (item)
+  "Format a single pending context ITEM for display in prompt."
+  (let ((source (plist-get item :source))
+        (lines (plist-get item :lines))
+        (content (plist-get item :content)))
+    (format "Context from %s%s:\n```\n%s\n```"
+            source
+            (if lines (format " (lines %s)" lines) "")
+            content)))
+
+(defun le-gpt--pending-context-get-formatted ()
+  "Get formatted string of all pending context items, or nil if empty."
+  (when le-gpt--pending-context
+    (mapconcat #'le-gpt--pending-context-format-item
+               (reverse le-gpt--pending-context)
+               "\n\n")))
+
+(defun le-gpt--pending-context-clear ()
+  "Clear all pending context items."
+  (setq le-gpt--pending-context nil))
+
+(defun le-gpt--pending-context-count ()
+  "Return the number of pending context items."
+  (length le-gpt--pending-context))
+
+;;;###autoload
+(defun le-gpt-context-add-region (start end)
+  "Add the region from START to END as pending context.
+The snippet will be automatically included in the next GPT request."
+  (interactive "r")
+  (unless (use-region-p)
+    (user-error "No region selected"))
+  (let* ((content (buffer-substring-no-properties start end))
+         (source (buffer-name))
+         (start-line (line-number-at-pos start))
+         (end-line (line-number-at-pos end))
+         (lines (if (= start-line end-line)
+                    (number-to-string start-line)
+                  (format "%d-%d" start-line end-line)))
+         (line-count (1+ (- end-line start-line)))
+         (item (list :content content
+                     :source source
+                     :lines lines
+                     :timestamp (current-time))))
+    (push item le-gpt--pending-context)
+    (message "Added %d line%s from %s (%d item%s pending)"
+             line-count
+             (if (= line-count 1) "" "s")
+             source
+             (le-gpt--pending-context-count)
+             (if (= (le-gpt--pending-context-count) 1) "" "s"))))
+
+;;;###autoload
+(defun le-gpt-context-clear ()
+  "Clear all pending context."
+  (interactive)
+  (let ((count (le-gpt--pending-context-count)))
+    (le-gpt--pending-context-clear)
+    (message "Cleared %d pending context item%s"
+             count
+             (if (= count 1) "" "s"))))
+
+;;;###autoload
+(defun le-gpt-context-show ()
+  "Show current pending context in a buffer."
+  (interactive)
+  (if (null le-gpt--pending-context)
+      (message "No pending context")
+    (let ((buffer (get-buffer-create "*Le GPT Pending Context*")))
+      (with-current-buffer buffer
+        (read-only-mode -1)
+        (erase-buffer)
+        (insert (format "Pending Context (%d item%s):\n\n"
+                        (le-gpt--pending-context-count)
+                        (if (= (le-gpt--pending-context-count) 1) "" "s")))
+        (insert (make-string 50 ?-) "\n\n")
+        (dolist (item (reverse le-gpt--pending-context))
+          (insert (format "Source: %s (lines %s)\n"
+                          (plist-get item :source)
+                          (plist-get item :lines)))
+          (insert (make-string 30 ?-) "\n")
+          (insert (plist-get item :content))
+          (insert "\n\n" (make-string 50 ?-) "\n\n"))
+        (goto-char (point-min))
+        (read-only-mode 1))
+      (display-buffer buffer))))
+
 (require 'le-gpt-core)
 (require 'le-gpt-context-utils)
 (require 'le-gpt-context-history)
@@ -217,6 +312,29 @@ Computes expensive metadata lazily only when annotation is displayed."
                 (setq choices (delete selection choices))))))))
 
     (nreverse selected-items)))
+
+(defun le-gpt--get-all-context (use-interactive)
+  "Get combined context string from pending and optionally interactive selection.
+If USE-INTERACTIVE is non-nil, also prompt for additional context.
+Pending context is cleared after retrieval."
+  (let* ((pending-count (le-gpt--pending-context-count))
+         (pending (le-gpt--pending-context-get-formatted))
+         (selected (when use-interactive (le-gpt--get-context)))
+         (result nil))
+    ;; Combine pending and selected context
+    (setq result
+          (cond
+           ((and pending selected) (concat pending "\n\n" selected))
+           (pending pending)
+           (selected selected)
+           (t nil)))
+    ;; Clear pending context after use
+    (when pending
+      (le-gpt--pending-context-clear)
+      (message "Le GPT: Included %d pending context item%s (now cleared)"
+               pending-count
+               (if (= pending-count 1) "" "s")))
+    result))
 
 (provide 'le-gpt-context)
 ;;; le-gpt-context.el ends here

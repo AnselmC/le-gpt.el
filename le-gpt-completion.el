@@ -18,11 +18,12 @@
 (defun le-gpt-completion-at-point (use-context)
   "Get completion from GPT based on buffer content up to point.
 If USE-CONTEXT is non-nil, prompt for context files.
+Pending context is always included if present.
 The generated completion is displayed directly in buffer."
   (let* ((start-point (point))
          (buffer-content (buffer-substring-no-properties (point-min) start-point))
          (buffer-rest (buffer-substring-no-properties start-point (point-max)))
-         (context (if use-context (le-gpt--get-context) nil))
+         (context (le-gpt--get-all-context use-context))
          (prompt (concat (when context (concat "User:\n\n" context))
                          "User: " buffer-content "<cursor>" buffer-rest))
          (prompt-file (le-gpt--create-prompt-file prompt))
