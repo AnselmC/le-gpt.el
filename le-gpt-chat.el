@@ -80,7 +80,8 @@
   (with-current-buffer buffer
     (goto-char (point-max))
     (font-lock-update)
-    (le-gpt--make-process (le-gpt--create-prompt-file buffer) buffer)
+    (let ((system-instructions (le-gpt--build-system-instructions nil)))
+      (le-gpt--make-process (le-gpt--create-prompt-file buffer) buffer system-instructions))
     (message "Le GPT: Running command...")
     (font-lock-update)))
 

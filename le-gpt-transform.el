@@ -30,12 +30,13 @@ If USE-CONTEXT is non-nil, select context files interactively."
          (command (le-gpt--read-command))
          (prompt (concat (when context (concat "User:\n\n" context))
                          "User: " command "\n"
-                         "<region>" region-content "<region>" "\n"
-                         le-gpt-transform-region-instructions "\n"
-                         "GPTContext: " buffer-before "\n" buffer-after))
+                         "<region>" region-content "</region>" "\n"
+                         "Context before region: " buffer-before "\n"
+                         "Context after region: " buffer-after))
          (prompt-file (le-gpt--create-prompt-file prompt))
+         (system-instructions (le-gpt--build-system-instructions le-gpt-transform-region-instructions))
          (insertion-marker (make-marker))
-         (process (le-gpt--make-process prompt-file nil)))
+         (process (le-gpt--make-process prompt-file nil system-instructions)))
     (delete-region start end)
     (set-marker insertion-marker (point))
     (set-process-filter process (lambda (proc string)

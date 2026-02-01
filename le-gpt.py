@@ -216,12 +216,8 @@ def _stream_chat(
     model: str,
     max_tokens: int,
     temperature: float,
+    instructions: str | None,
 ) -> None:
-    instruction_sep = "GPTInstructions: "
-    if instruction_sep in prompt:
-        prompt, instructions = prompt.split(instruction_sep)
-    else:
-        instructions = None
     stream = _stream_chat_completions(
         prompt, api_key, api_type, model, max_tokens, temperature, instructions
     )
@@ -252,6 +248,12 @@ def _parse_args() -> argparse.Namespace:
         choices=list(APIType),
         help="Which GPT provider to use.",
     )
+    parser.add_argument(
+        "--system",
+        type=Path,
+        default=None,
+        help="Optional file containing system instructions.",
+    )
     return parser.parse_args()
 
 
@@ -259,6 +261,9 @@ if __name__ == "__main__":
     args = _parse_args()
     with args.prompt_file.open("r", encoding="utf-8") as fdes:
         prompt = fdes.read()
+    instructions = None
+    if args.system and args.system.exists():
+        instructions = args.system.read_text(encoding="utf-8")
     _stream_chat(
         prompt,
         args.api_key,
@@ -266,4 +271,5 @@ if __name__ == "__main__":
         args.model,
         args.max_tokens,
         args.temperature,
+        instructions,
     )
