@@ -4,7 +4,7 @@
 
 ;; Author: Andreas Stuhlmueller <andreas@ought.org>
 ;; Maintainer: Anselm Coogan <anselm.coogan@gmail.com>
-;; Version: 0.12.0
+;; Version: 0.12.1
 ;; Keywords: openai, anthropic, deepseek, gpt, claude, language, copilot, convenience, tools, llm
 ;; URL: https://github.com/AnselmC/le-gpt.el
 ;; License: MIT
@@ -55,13 +55,6 @@ With prefix argument USE-CONTEXT,
 interactively select context files to be used for this command."
   (interactive "P")
   (le-gpt-completion-at-point use-context))
-
-;;;###autoload
-(defun le-gpt-interrupt ()
-  "Interrupt the currently running GPT process."
-  (interactive)
-  (le-gpt-interrupt))
-
 
 (defgroup le-gpt nil
   "Customization group for Le GPT."
