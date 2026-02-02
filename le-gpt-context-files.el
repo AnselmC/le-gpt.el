@@ -198,12 +198,8 @@ First %s is replaced with the list of files, second with their contents.")
               (message "Reached total context size limit, stopping at %d files" processed)
               (cl-return))
 
-            (let* ((language
-                    (format "get-language-for-file (%s)" file)
-                    (le-gpt--get-language-for-file full-path))
-                   (content
-                    (format "read-file-content (%s)" file)
-                    (le-gpt--get-file-content-limited full-path file-size)))
+            (let* ((language (le-gpt--get-language-for-file full-path))
+                   (content (le-gpt--get-file-content-limited full-path file-size)))
               (setq file-contents
                     (concat file-contents
                             (format "\nFile: %s (%s)\n```%s\n%s\n```\n"
